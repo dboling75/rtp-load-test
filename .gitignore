@@ -1,0 +1,57 @@
+# ============================
+# RTP Smoke / Load Test Repo
+# ============================
+
+# --- Environment & Secrets ---
+.env
+secrets/
+*.key
+*.pem
+*.crt
+*.token
+token.txt
+
+# --- Results & Logs ---
+results/
+**/summary.json
+**/output.json
+**/output.log
+**/results.log
+*.csv
+*.tmp
+*.bak
+
+# --- Node / NPM (for postman-to-k6 etc.) ---
+node_modules/
+package-lock.json
+
+# --- OS / Editor Files ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- Docker / Podman ---
+*.pid
+*.tar
+*.img
+*.log
+*.sock
+*.lock
+
+# --- Python virtualenvs (if you script analysis) ---
+venv/
+.env/
+__pycache__/
+*.pyc
+
+# --- Archive / Export files ---
+*.zip
+*.tar.gz
+*.7z
+
+# --- Misc ---
+/tmp/
+/.cache/
+/.k6/

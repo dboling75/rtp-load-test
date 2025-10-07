@@ -1,0 +1,13 @@
+services:
+  k6:
+    image: grafana/k6:latest
+    container_name: k6-rtp-smoke
+    env_file:
+      - .env
+    volumes:
+      - ./scripts:/scripts
+      # Mount secrets under /scripts so k6 `open()` can read them
+      - ./secrets:/scripts/secrets:ro
+      - ./results:/results
+    command: ["run", "/scripts/test_smoke.js"]
+    restart: "no"
