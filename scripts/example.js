@@ -5,11 +5,9 @@ const BASE = __ENV.BASE_URL || 'https://test.k6.io';
 const AUTH = __ENV.AUTH_TOKEN || '';
 const LOG_LEVEL = __ENV.LOG_LEVEL || 'normal';
 
-// Support either simple fixed-duration or staged tests if STAGES is set
 const stagesEnv = (__ENV.STAGES || '').trim();
 let stages = [];
 if (stagesEnv) {
-  // Expect CSV of "duration:target" items
   stages = stagesEnv.split(',').map(s => {
     const [dur, tgt] = s.split(':').map(x => x.trim());
     return { duration: dur, target: parseInt(tgt, 10) };

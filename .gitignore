@@ -32,7 +32,7 @@ Thumbs.db
 .idea/
 *.swp
 
-# --- Docker / Podman ---
+# --- Docker ---
 *.pid
 *.tar
 *.img
