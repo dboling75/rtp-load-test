@@ -1,0 +1,62 @@
+version: "3.9"
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: k6-influxdb
+    ports:
+      - "${INFLUXDB_PORT}:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: ${DOCKER_INFLUXDB_INIT_MODE}
+      DOCKER_INFLUXDB_INIT_USERNAME: ${DOCKER_INFLUXDB_INIT_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${DOCKER_INFLUXDB_INIT_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${DOCKER_INFLUXDB_INIT_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+    volumes:
+      - influx-data:/var/lib/influxdb2
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: k6-grafana
+    depends_on:
+      - influxdb
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+  # On-demand runner. Use profiles so it doesn't auto-start.
+  k6-runner:
+    image: grafana/k6:latest
+    container_name: k6-runner
+    depends_on:
+      - influxdb
+    profiles: ["runner"]
+    environment:
+      K6_INFLUXDB_TOKEN: ${K6_INFLUXDB_TOKEN}
+      K6_ORG: ${K6_ORG}
+      K6_BUCKET: ${K6_BUCKET}
+      K6_SCRIPT: ${K6_SCRIPT}
+      # Pass through test variables to the container's env:
+      BASE_URL: ${BASE_URL}
+      VUS: ${VUS}
+      DURATION: ${DURATION}
+      STAGES: ${STAGES}
+      THRESHOLD_HTTP_REQ_DURATION_P95: ${THRESHOLD_HTTP_REQ_DURATION_P95}
+      AUTH_TOKEN: ${AUTH_TOKEN}
+      SLEEP_DURATION: ${SLEEP_DURATION}
+      LOG_LEVEL: ${LOG_LEVEL}
+    volumes:
+      - ./scripts:/scripts:ro
+    command: >
+      run
+      --out
+      influxdb=http://influxdb:8086/api/v2/write?org=${K6_ORG}&bucket=${K6_BUCKET}&precision=ns
+      ${K6_SCRIPT}
+
+volumes:
+  influx-data:
+  grafana-data:

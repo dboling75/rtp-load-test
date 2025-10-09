@@ -1,48 +1,37 @@
-# RTP Smoke Test Repository
-
-This repository contains the baseline **RTP API smoke test** using **k6** and **Podman Compose**.
-
-## Structure
-```
-.
-├── compose.yml          # Podman Compose definition for k6
-├── .env                 # Environment configuration (edit this first)
-├── .gitignore           # Git ignore rules for secrets/results
-├── README-smoke.md      # Detailed smoke test guide
-├── scripts/
-│   └── test_smoke.js    # Minimal k6 smoke test script
-├── secrets/
-│   └── token.txt        # Optional bearer token
-└── results/             # Output folder for k6 JSON summaries
-```
+# k6 + InfluxDB v2 + Grafana (Docker) with k6-runner
 
 ## Quick Start
 ```bash
-# 1. Configure environment
-vi .env
-
-# 2. Run smoke test
-podman-compose up -d
-
-# 3. View logs
-podman logs -f k6-rtp-smoke
-
-# 4. Stop and clean up
-podman-compose down
+cp .env.example .env
+make up             # start InfluxDB and Grafana
+make test           # run default k6 script
 ```
 
-## Expected Output
-A short summary in logs similar to:
-```
-== Smoke Summary ==
-P90: 145.00 ms
-Errors: 0
-Iterations: 60
+Grafana: http://localhost:3000 (admin/admin) — add InfluxDB data source:
+- URL: http://influxdb:8086
+- Query Language: Flux
+- Organization: ${DOCKER_INFLUXDB_INIT_ORG}
+- Token: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+- Default Bucket: ${DOCKER_INFLUXDB_INIT_BUCKET}
+
+Import a community k6 dashboard via Grafana's "Dashboards → Import".
+
+## Env Profiles
+- Copy `.env.stress.example` to `.env.stress` and tweak, then:
+  ```bash
+  make test-stress
+  ```
+- Copy `.env.prod.example` to `.env.prod` and tweak, then:
+  ```bash
+  make test-prod
+  ```
+
+## Run a different script
+```bash
+make test-file FILE=/scripts/example.js
 ```
 
-Full results are written to `results/summary.json`.
-
-## Next Steps
-- Convert Postman tests to k6 scripts via `npx postman-to-k6`
-- Integrate with InfluxDB + Grafana for trend tracking
-- Scale from smoke to throughput testing using the RTP Performance Test Plan
+## Reset
+```bash
+make reset
+```
