@@ -2,29 +2,22 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
 
-// --- Config via env ---
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 const PATH = __ENV.ENDPOINT_PATH || '/health';
 const AUTH_MODE = (__ENV.AUTH_MODE || 'none').toLowerCase();
 
-const RATE = Number(__ENV.RATE || 2);          // requests per second
+const RATE = Number(__ENV.RATE || 2);
 const DURATION = __ENV.DURATION || '30s';
-const THRESHOLD_P90 = Number(__ENV.THRESHOLD_P90 || 2000); // ms
+const THRESHOLD_P90 = Number(__ENV.THRESHOLD_P90 || 2000);
 const ERROR_RATE_MAX = Number(__ENV.ERROR_RATE_MAX || 0.05);
 
-// --- Optional token sources ---
-// Priority: env TOKEN > secrets/token.txt (mounted under /scripts)
 let TOKEN = __ENV.TOKEN || '';
 try {
   if (!TOKEN) {
-    // k6 open() can read files relative to the script working dir (/scripts)
     TOKEN = open('secrets/token.txt').trim();
   }
-} catch (e) {
-  // ignore if missing
-}
+} catch (e) {}
 
-// --- Custom metric to prove we ran end-to-end ---
 const smoke_duration = new Trend('smoke_req_duration');
 
 export const options = {
@@ -48,21 +41,15 @@ export const options = {
 
 export function main() {
   const url = `${BASE_URL}${PATH}`;
-
   const headers = {
     'Content-Type': 'application/json',
     ...(AUTH_MODE === 'bearer' && TOKEN ? { 'Authorization': `Bearer ${TOKEN}` } : {}),
   };
-
   const res = http.get(url, { headers, tags: { endpoint: `GET ${PATH}` } });
-
   smoke_duration.add(res.timings.duration);
-
   check(res, {
     'status is 2xx/3xx': (r) => r.status >= 200 && r.status < 400,
   });
-
-  // Small think time to avoid client-side jitter
   sleep(0.2);
 }
 

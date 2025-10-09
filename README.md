@@ -1,48 +1,41 @@
-# RTP Smoke Test Repository
+# RTP API Performance & Smoke Test (Docker Compose)
 
-This repository contains the baseline **RTP API smoke test** using **k6** and **Podman Compose**.
-
-## Structure
-```
-.
-├── compose.yml          # Podman Compose definition for k6
-├── .env                 # Environment configuration (edit this first)
-├── .gitignore           # Git ignore rules for secrets/results
-├── README-smoke.md      # Detailed smoke test guide
-├── scripts/
-│   └── test_smoke.js    # Minimal k6 smoke test script
-├── secrets/
-│   └── token.txt        # Optional bearer token
-└── results/             # Output folder for k6 JSON summaries
-```
+This repo gives you:
+- A **k6 runner** streaming to **InfluxDB v2** with **Grafana** dashboards.
+- A configurable **smoke test** (`scripts/test_smoke.js`) and a simple **example** (`scripts/example.js`).
 
 ## Quick Start
 ```bash
-# 1. Configure environment
-vi .env
+cp .env.example .env
+docker compose up -d influxdb grafana
 
-# 2. Run smoke test
-podman-compose up -d
+# Default test (K6_SCRIPT from .env, defaults to /scripts/example.js)
+docker compose run --rm --profile runner k6-runner
 
-# 3. View logs
-podman logs -f k6-rtp-smoke
+# Smoke test against your API
+docker compose run --rm --profile runner -e K6_SCRIPT=/scripts/test_smoke.js k6-runner
+```
+- **InfluxDB UI**: http://localhost:8086  (org: `${DOCKER_INFLUXDB_INIT_ORG}`, bucket: `${DOCKER_INFLUXDB_INIT_BUCKET}`)
+- **Grafana UI**:   http://localhost:3000  (user: `${GF_SECURITY_ADMIN_USER}`, pass: `${GF_SECURITY_ADMIN_PASSWORD}`)
 
-# 4. Stop and clean up
-podman-compose down
+### Configure Grafana → InfluxDB (Flux)
+1. Data source URL: `http://influxdb:8086`
+2. Organization: `${DOCKER_INFLUXDB_INIT_ORG}`
+3. Token: `${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}`
+4. Default Bucket: `${DOCKER_INFLUXDB_INIT_BUCKET}`
+5. Import a community **k6** dashboard.
+
+## Smoke Test Config
+Edit `.env` or override at runtime:
+- `BASE_URL`, `ENDPOINT_PATH`, `AUTH_MODE` = `none` or `bearer`
+- Place JWT in `secrets/token.txt` or set `TOKEN` env var
+
+## Local k6 Web Dashboard (no DB)
+```bash
+docker run --rm -p 5665:5665 -v "$PWD/scripts:/scripts:ro" grafana/k6:latest \  run --out web-dashboard=/ /scripts/example.js
+# Open http://localhost:5665
 ```
 
-## Expected Output
-A short summary in logs similar to:
-```
-== Smoke Summary ==
-P90: 145.00 ms
-Errors: 0
-Iterations: 60
-```
+## Test Plan
+See `RTP_API_Performance_TestPlan.md` for throughput matrix, P90 targets, success criteria, and reporting.
 
-Full results are written to `results/summary.json`.
-
-## Next Steps
-- Convert Postman tests to k6 scripts via `npx postman-to-k6`
-- Integrate with InfluxDB + Grafana for trend tracking
-- Scale from smoke to throughput testing using the RTP Performance Test Plan
