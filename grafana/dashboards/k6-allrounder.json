@@ -1,0 +1,21 @@
+{
+  "title": "k6 All\u2011Rounder",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Latency p95",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket:\"${DOCKER_INFLUXDB_INIT_BUCKET}\") |> range(start:$__range) |> filter(fn:(r)=> r._measurement==\"http_req_duration\") |> quantile(q:0.95)"
+        }
+      ]
+    }
+  ]
+}
